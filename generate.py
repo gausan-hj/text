@@ -198,7 +198,7 @@ def generate_html(people, dates, groups, totals, rank_map):
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>学长团分数板</title>
     <style>
-        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        {{ margin: 0; padding: 0; box-sizing: border-box; }}
         :root {{
             --bg: #f5f7fc; --card: white; --text: #1a2b3c; --text-light: #5a6b7a;
             --border: #e1e8f0; --heat-1: #083344; --heat-3: #155e75; --heat-5: #0284c7;
