@@ -181,7 +181,7 @@ def generate_html(people, dates, groups, totals, rank_map):
     
     now = datetime.now().strftime('%m/%d %H:%M')
     
-    html_content = f'''<!DOCTYPE html>
+    html = '''<!DOCTYPE html>
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
