@@ -1,48 +1,16 @@
 import pandas as pd
 from datetime import datetime
+import base64
+import io
 import json
-import html
 
-# ===== 配置 =====
+# ===== 你要修改的地方 =====
 SHEET_ID = "1YVa3nLUBW80j2nA4mudEqLH91RJ0FSRytmoDqmbyUJk"
 SHEET_NAME = "Sheet3"
+LANGUAGES_JSON_PATH = "languages.json"  # 语言文件路径
+# ========================
 
-# ===== 成员名单 =====
-members_list = [
-    {"group": "星穹组", "name_cn": "陈展艺", "name_en": "IVAN TAN ZHAN YI", "class": "S2FA", "student_id": "22038", "order": 1},
-    {"group": "星穹组", "name_cn": "侯展扬", "name_en": "HOW ZHAN YANG", "class": "S2Y", "student_id": "22100", "order": 2},
-    {"group": "星穹组", "name_cn": "邱嘉瑞", "name_en": "KATHERINE KHOO JAI RUI", "class": "J3T", "student_id": "24076", "order": 3},
-    {"group": "星穹组", "name_cn": "莎哈娜", "name_en": "SADHANA A/P SASU BAKIAN", "class": "J3T", "student_id": "24078", "order": 4},
-    {"group": "星穹组", "name_cn": "李韡翰", "name_en": "LEE WEI HANN", "class": "J3K", "student_id": "24068", "order": 5},
-    {"group": "星穹组", "name_cn": "彭绍洋", "name_en": "PEH SHAO YANG", "class": "J3T", "student_id": "24088", "order": 6},
-    {"group": "星穹组", "name_cn": "梁纹璇", "name_en": "LEONG WEN XUAN", "class": "J2Y", "student_id": "25035", "order": 7},
-    {"group": "星穹组", "name_cn": "尤嘉乐", "name_en": "JUSTIN YEW JIA LE", "class": "J2Y", "student_id": "25046", "order": 8},
-    {"group": "星穹组", "name_cn": "许艳棋", "name_en": "KHOR YAN QI", "class": "J1Y", "student_id": "26018", "order": 9},
-    {"group": "星穹组", "name_cn": "林隽毓", "name_en": "LIM JOON YI", "class": "J1Y", "student_id": "26032", "order": 10},
-    {"group": "夜曜组", "name_cn": "李竑证", "name_en": "LEE HOONG ZHENG", "class": "S2FA", "student_id": "22040", "order": 1},
-    {"group": "夜曜组", "name_cn": "廖若含", "name_en": "LIEW XIN YU", "class": "S2Y", "student_id": "22029", "order": 2},
-    {"group": "夜曜组", "name_cn": "林芷嫣", "name_en": "LIM ZHI YAN", "class": "S2Y", "student_id": "22083", "order": 3},
-    {"group": "夜曜组", "name_cn": "周柔慈", "name_en": "CHEO ROU ZHI", "class": "S2K", "student_id": "22051", "order": 4},
-    {"group": "夜曜组", "name_cn": "林骏喨", "name_en": "LIM TEIK LIANG", "class": "J3T", "student_id": "24083", "order": 5},
-    {"group": "夜曜组", "name_cn": "林宜彤", "name_en": "LIM YEE TONG", "class": "J2Y", "student_id": "25036", "order": 6},
-    {"group": "夜曜组", "name_cn": "潘宛瑜", "name_en": "TRACY PHUAH WANYU", "class": "J2Y", "student_id": "25071", "order": 7},
-    {"group": "夜曜组", "name_cn": "符传吉", "name_en": "FOO CHUAN JI", "class": "J2Y", "student_id": "25044", "order": 8},
-    {"group": "夜曜组", "name_cn": "陈欣怡", "name_en": "CINDY TAN XIN YI", "class": "J2F", "student_id": "25058", "order": 9},
-    {"group": "夜曜组", "name_cn": "丽亚", "name_en": "DHIYA ZULAIKHA DARWISYAH BINTI YUSNIZAN", "class": "J2F", "student_id": "25059", "order": 10},
-    {"group": "夜曜组", "name_cn": "郑宜桐", "name_en": "TEH YEE THONG", "class": "J1Y", "student_id": "26024", "order": 11},
-    {"group": "沧澜组", "name_cn": "浦源政", "name_en": "POH YUAN ZHENG", "class": "S2Y", "student_id": "22044", "order": 1},
-    {"group": "沧澜组", "name_cn": "吴贝优", "name_en": "GOH BEI YO", "class": "S2Y", "student_id": "22021", "order": 2},
-    {"group": "沧澜组", "name_cn": "林沛筠", "name_en": "LIM PEI JUN", "class": "S2Y", "student_id": "22030", "order": 3},
-    {"group": "沧澜组", "name_cn": "陈诗惠", "name_en": "CHAN SHI HUI", "class": "S2FA", "student_id": "22017", "order": 4},
-    {"group": "沧澜组", "name_cn": "郑憶欣", "name_en": "TEE YEE XIN", "class": "S1Y", "student_id": "23065", "order": 5},
-    {"group": "沧澜组", "name_cn": "谢楷棋", "name_en": "CHEAH KHAI QI", "class": "S1T", "student_id": "23013", "order": 6},
-    {"group": "沧澜组", "name_cn": "蔡善恩", "name_en": "CHUAH SHAN EN", "class": "J3F", "student_id": "24039", "order": 7},
-    {"group": "沧澜组", "name_cn": "许家绮", "name_en": "KOO JIA QI", "class": "J2Y", "student_id": "25031", "order": 8},
-    {"group": "沧澜组", "name_cn": "张子欣", "name_en": "TEON ZI XIN", "class": "J2F", "student_id": "25070", "order": 9},
-    {"group": "沧澜组", "name_cn": "施锦轩", "name_en": "SEE JIN XUAN", "class": "J1T", "student_id": "26092", "order": 10},
-]
-
-# ===== 联课活动数据 =====
+# ===== 2026年联课活动数据（多语言）=====
 cca_data = [
     {"date": "2026-02-24", "activity": "活动顾问+总学长+副总学长", "activity_en": "Advisor + Head Prefect + Vice Head", "activity_ms": "Penasihat + Ketua Pengawas + Timbalan", "uniform": "校服"},
     {"date": "2026-02-26", "activity": "操步", "activity_en": "Marching", "activity_ms": "Kawad", "uniform": "体育衣"},
@@ -62,292 +30,2508 @@ cca_data = [
     {"date": "2026-04-28", "activity": "操步", "activity_en": "Marching", "activity_ms": "Kawad", "uniform": "体育衣"},
     {"date": "2026-04-30", "activity": "活动（沧澜组）", "activity_en": "Activity (Ocean Group)", "activity_ms": "Aktiviti (Kumpulan Lautan)", "uniform": "校服"},
     {"date": "2026-05-05", "activity": "第一学期检讨", "activity_en": "First Semester Review", "activity_ms": "Semakan Semester Pertama", "uniform": "校服"},
-    {"date": "2026-05-07", "activity": "操步", "activity_en": "Marching", "activity_ms": "Kawad", "uniform": "体育衣"},
+    {"date": "2026-05-07", "activity": "操步", "activity_en": "Marching", "activity_ms": "Kawad", "uniform": "体育衣"}
 ]
 
-# ===== 多语言数据 =====
-languages = {
-    "zh": {"title": "学长团分数板", "search": "搜姓名/班级/学号...", "download": "生成统计图", "dark": "深色", "footer": "双击切换深色 · 颜色越浅分数越高", "heat_low": "低分", "heat_high": "高分"},
-    "en": {"title": "Prefects' Scoreboard", "search": "Search name/class/id...", "download": "Download Chart", "dark": "Dark", "footer": "Double tap for dark mode · Lighter = higher score", "heat_low": "Low", "heat_high": "High"}
-}
+cca_json = json.dumps(cca_data, ensure_ascii=False)
 
-def fetch_data():
-    url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}"
-    for encoding in ['utf-8-sig', 'utf-8', 'latin1']:
-        try:
-            df = pd.read_csv(url, header=None, encoding=encoding)
-            break
-        except:
-            continue
-    else:
-        raise Exception("无法读取 Google Sheets")
+# ===== 加载语言文件 =====
+print(f"正在加载语言文件: {LANGUAGES_JSON_PATH}")
+try:
+    with open(LANGUAGES_JSON_PATH, 'r', encoding='utf-8') as f:
+        languages = json.load(f)
+    print("✅ 语言文件加载成功")
+except FileNotFoundError:
+    print(f"❌ 找不到语言文件: {LANGUAGES_JSON_PATH}")
+    print("请确保 languages.json 在正确的路径")
+    # 创建一个默认的语言文件
+    languages = {
+        "zh": {
+            "app": {
+                "title": "学长团分数板",
+                "subtitle": "Prefects' Scoreboard",
+                "search": "搜姓名/班级/学号...",
+                "download": "下载统计",
+                "dark": "深色",
+                "footer": "👆 双击屏幕 / 按两次空格切换深色 · 📊下载统计 · 颜色越浅分数越高",
+                "heatmap": {
+                    "low": "低分",
+                    "high": "高分"
+                },
+                "chart": {
+                    "title": "各组总分对比",
+                    "save": "保存到相册",
+                    "close": "关闭",
+                    "total": "总分",
+                    "rank": "第{rank}名",
+                    "members": "{count}人",
+                    "average": "平均{avg}分"
+                },
+                "groups": {
+                    "xingqiong": "星穹组",
+                    "yeyao": "夜曜组",
+                    "canglan": "沧澜组",
+                    "average": "平均"
+                },
+                "table": {
+                    "number": "#",
+                    "name": "姓名",
+                    "class": "班",
+                    "id": "学号",
+                    "daily": "每日得分",
+                    "total": "总分",
+                    "reward": "奖"
+                },
+                "reward": {
+                    "title": "本轮奖励机制",
+                    "subtitle": "公平原则 · 不负每一位付出的学长",
+                    "first": {
+                        "condition": "分数 ≥ 平均分÷2",
+                        "benefit": "✨免搬椅子+减免操步"
+                    },
+                    "second": {
+                        "condition": "分数 ≥ 平均分",
+                        "benefit": "✨免搬椅子+减免操步"
+                    },
+                    "third": {
+                        "condition": "组内前三名",
+                        "benefit": "✨免搬椅子+减免操步"
+                    },
+                    "extra": "🎁 第1名达标者额外奖励一份",
+                    "footer": "* 未达标者工作照旧 *"
+                },
+                "reminder": {
+                    "button": "开启提醒",
+                    "title": "每日提醒时间",
+                    "confirm": "知道了，开启提醒",
+                    "morning": "起床提醒",
+                    "evening": "明天衣服提醒",
+                    "night": "再次提醒",
+                    "bedtime": "睡前提醒"
+                },
+                "uniform": {
+                    "sports": "明天穿体育衣 - {activity}",
+                    "uniform": "明天穿校服 - {activity}",
+                    "default": "明天没有联课活动"
+                },
+                "toast": {
+                    "generating": "📸 正在生成图片...",
+                    "saved": "✅ 已保存到相册",
+                    "saveFailed": "❌ 保存失败",
+                    "chartGenerated": "📊 统计图已生成"
+                }
+            }
+        },
+        "en": {
+            "app": {
+                "title": "Prefects' Scoreboard",
+                "subtitle": "Prefects' Scoreboard",
+                "search": "Search name/class/id...",
+                "download": "Download Chart",
+                "dark": "Dark",
+                "footer": "👆 Double tap / double space for dark mode · 📊Download chart · Lighter color = higher score",
+                "heatmap": {
+                    "low": "Low",
+                    "high": "High"
+                },
+                "chart": {
+                    "title": "Group Total Comparison",
+                    "save": "Save to Gallery",
+                    "close": "Close",
+                    "total": "Total",
+                    "rank": "Rank {rank}",
+                    "members": "{count} members",
+                    "average": "Avg {avg}"
+                },
+                "groups": {
+                    "xingqiong": "Star Group",
+                    "yeyao": "Moon Group",
+                    "canglan": "Ocean Group",
+                    "average": "Avg"
+                },
+                "table": {
+                    "number": "#",
+                    "name": "Name",
+                    "class": "Class",
+                    "id": "ID",
+                    "daily": "Daily",
+                    "total": "Total",
+                    "reward": "Reward"
+                },
+                "reward": {
+                    "title": "Reward System",
+                    "subtitle": "Fairness · Every effort counts",
+                    "first": {
+                        "condition": "Score ≥ Avg ÷ 2",
+                        "benefit": "✨No chair moving + Less marching"
+                    },
+                    "second": {
+                        "condition": "Score ≥ Avg",
+                        "benefit": "✨No chair moving + Less marching"
+                    },
+                    "third": {
+                        "condition": "Top 3 in group",
+                        "benefit": "✨No chair moving + Less marching"
+                    },
+                    "extra": "🎁 Extra reward for 1st place achievers",
+                    "footer": "* Others continue duties *"
+                },
+                "reminder": {
+                    "button": "Enable Reminders",
+                    "title": "Daily Reminder Times",
+                    "confirm": "Got it, enable",
+                    "morning": "Wake up",
+                    "evening": "Tomorrow's uniform",
+                    "night": "Reminder again",
+                    "bedtime": "Bedtime"
+                },
+                "uniform": {
+                    "sports": "Tomorrow: Sports uniform - {activity}",
+                    "uniform": "Tomorrow: School uniform - {activity}",
+                    "default": "No CCA tomorrow"
+                },
+                "toast": {
+                    "generating": "📸 Generating image...",
+                    "saved": "✅ Saved to gallery",
+                    "saveFailed": "❌ Save failed",
+                    "chartGenerated": "📊 Chart generated"
+                }
+            }
+        },
+        "ms": {
+            "app": {
+                "title": "Papan Skor Pengawas",
+                "subtitle": "Papan Skor Pengawas",
+                "search": "Cari nama/kelas/id...",
+                "download": "Muat Turun",
+                "dark": "Gelap",
+                "footer": "👆 Ketuk dua kali / ruang dua kali untuk mod gelap · 📊Muat turun · Warna cerah = skor tinggi",
+                "heatmap": {
+                    "low": "Rendah",
+                    "high": "Tinggi"
+                },
+                "chart": {
+                    "title": "Perbandingan Jumlah Kumpulan",
+                    "save": "Simpan ke Galeri",
+                    "close": "Tutup",
+                    "total": "Jumlah",
+                    "rank": "Kedudukan {rank}",
+                    "members": "{count} ahli",
+                    "average": "Purata {avg}"
+                },
+                "groups": {
+                    "xingqiong": "Kumpulan Bintang",
+                    "yeyao": "Kumpulan Bulan",
+                    "canglan": "Kumpulan Lautan",
+                    "average": "Purata"
+                },
+                "table": {
+                    "number": "#",
+                    "name": "Nama",
+                    "class": "Kelas",
+                    "id": "ID",
+                    "daily": "Harian",
+                    "total": "Jumlah",
+                    "reward": "Ganjaran"
+                },
+                "reward": {
+                    "title": "Sistem Ganjaran",
+                    "subtitle": "Keadilan · Setiap usaha dihargai",
+                    "first": {
+                        "condition": "Skor ≥ Purata ÷ 2",
+                        "benefit": "✨Tiada kerusi + Kurang kawad"
+                    },
+                    "second": {
+                        "condition": "Skor ≥ Purata",
+                        "benefit": "✨Tiada kerusi + Kurang kawad"
+                    },
+                    "third": {
+                        "condition": "3 teratas dalam kumpulan",
+                        "benefit": "✨Tiada kerusi + Kurang kawad"
+                    },
+                    "extra": "🎁 Ganjaran tambahan untuk tempat pertama",
+                    "footer": "* Yang lain terus bertugas *"
+                },
+                "reminder": {
+                    "button": "Aktifkan Peringatan",
+                    "title": "Masa Peringatan Harian",
+                    "confirm": "Faham, aktifkan",
+                    "morning": "Bangun tidur",
+                    "evening": "Pakaian esok",
+                    "night": "Peringatan lagi",
+                    "bedtime": "Waktu tidur"
+                },
+                "uniform": {
+                    "sports": "Esok: Pakaian sukan - {activity}",
+                    "uniform": "Esok: Pakaian sekolah - {activity}",
+                    "default": "Tiada CCA esok"
+                },
+                "toast": {
+                    "generating": "📸 Menjana imej...",
+                    "saved": "✅ Disimpan ke galeri",
+                    "saveFailed": "❌ Gagal menyimpan",
+                    "chartGenerated": "📊 Carta dijana"
+                }
+            }
+        }
+    }
+    print("✅ 使用默认语言配置")
+
+languages_json = json.dumps(languages, ensure_ascii=False)
+
+# 生成Google Sheets的CSV导出链接
+url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}"
+
+# 读取数据
+print("正在从 Google Sheets 读取数据...")
+try:
+    df = pd.read_csv(url, header=None, encoding='utf-8-sig')
+except:
+    try:
+        df = pd.read_csv(url, header=None, encoding='latin1')
+    except:
+        df = pd.read_csv(url, header=None, encoding='cp1252')
+
+print(f"读取到 {len(df)} 行数据")
+
+# 获取日期（第一行）
+dates = []
+if len(df) > 0:
+    first_row = df.iloc[0].tolist()
+    for j in range(7, len(first_row)):
+        if pd.notna(first_row[j]):
+            date_str = str(first_row[j])
+            try:
+                if "00:00" in date_str:
+                    date_str = date_str[5:10]
+                dates.append(date_str)
+            except:
+                dates.append("")
+        else:
+            dates.append("")
+
+print(f"找到 {len(dates)} 个日期")
+
+# ===== 成员名单 =====
+members_list = [
+    # 星穹组 (10人)
+    {"group": "星穹组", "name_cn": "陈展艺", "name_en": "IVAN TAN ZHAN YI", "class": "S2FA", "student_id": "22038", "order": 1},
+    {"group": "星穹组", "name_cn": "侯展扬", "name_en": "HOW ZHAN YANG", "class": "S2Y", "student_id": "22100", "order": 2},
+    {"group": "星穹组", "name_cn": "邱嘉瑞", "name_en": "KATHERINE KHOO JAI RUI", "class": "J3T", "student_id": "24076", "order": 3},
+    {"group": "星穹组", "name_cn": "莎哈娜", "name_en": "SADHANA A/P SASU BAKIAN", "class": "J3T", "student_id": "24078", "order": 4},
+    {"group": "星穹组", "name_cn": "李韡翰", "name_en": "LEE WEI HANN", "class": "J3K", "student_id": "24068", "order": 5},
+    {"group": "星穹组", "name_cn": "彭绍洋", "name_en": "PEH SHAO YANG", "class": "J3T", "student_id": "24088", "order": 6},
+    {"group": "星穹组", "name_cn": "梁纹璇", "name_en": "LEONG WEN XUAN", "class": "J2Y", "student_id": "25035", "order": 7},
+    {"group": "星穹组", "name_cn": "尤嘉乐", "name_en": "JUSTIN YEW JIA LE", "class": "J2Y", "student_id": "25046", "order": 8},
+    {"group": "星穹组", "name_cn": "许艳棋", "name_en": "KHOR YAN QI", "class": "J1Y", "student_id": "26018", "order": 9},
+    {"group": "星穹组", "name_cn": "林隽毓", "name_en": "LIM JOON YI", "class": "J1Y", "student_id": "26032", "order": 10},
     
-    student_id_col = None
-    for i in range(min(15, len(df))):
-        row = df.iloc[i].astype(str).tolist()
-        for j, cell in enumerate(row):
-            if '学号' in cell or 'ID' in cell:
-                student_id_col = j
-                data_start = i + 1
-                break
-        if student_id_col is not None:
-            break
+    # 夜曜组 (11人)
+    {"group": "夜曜组", "name_cn": "李竑证", "name_en": "LEE HOONG ZHENG", "class": "S2FA", "student_id": "22040", "order": 1},
+    {"group": "夜曜组", "name_cn": "廖若含", "name_en": "LIEW XIN YU", "class": "S2Y", "student_id": "22029", "order": 2},
+    {"group": "夜曜组", "name_cn": "林芷嫣", "name_en": "LIM ZHI YAN", "class": "S2Y", "student_id": "22083", "order": 3},
+    {"group": "夜曜组", "name_cn": "周柔慈", "name_en": "CHEO ROU ZHI", "class": "S2K", "student_id": "22051", "order": 4},
+    {"group": "夜曜组", "name_cn": "林骏喨", "name_en": "LIM TEIK LIANG", "class": "J3T", "student_id": "24083", "order": 5},
+    {"group": "夜曜组", "name_cn": "林宜彤", "name_en": "LIM YEE TONG", "class": "J2Y", "student_id": "25036", "order": 6},
+    {"group": "夜曜组", "name_cn": "潘宛瑜", "name_en": "TRACY PHUAH WANYU", "class": "J2Y", "student_id": "25071", "order": 7},
+    {"group": "夜曜组", "name_cn": "符传吉", "name_en": "FOO CHUAN JI", "class": "J2Y", "student_id": "25044", "order": 8},
+    {"group": "夜曜组", "name_cn": "陈欣怡", "name_en": "CINDY TAN XIN YI", "class": "J2F", "student_id": "25058", "order": 9},
+    {"group": "夜曜组", "name_cn": "丽亚", "name_en": "DHIYA ZULAIKHA DARWISYAH BINTI YUSNIZAN", "class": "J2F", "student_id": "25059", "order": 10},
+    {"group": "夜曜组", "name_cn": "郑宜桐", "name_en": "TEH YEE THONG", "class": "J1Y", "student_id": "26024", "order": 11},
     
-    if student_id_col is None:
-        raise Exception("未找到学号列")
+    # 沧澜组 (10人)
+    {"group": "沧澜组", "name_cn": "浦源政", "name_en": "POH YUAN ZHENG", "class": "S2Y", "student_id": "22044", "order": 1},
+    {"group": "沧澜组", "name_cn": "吴贝优", "name_en": "GOH BEI YO", "class": "S2Y", "student_id": "22021", "order": 2},
+    {"group": "沧澜组", "name_cn": "林沛筠", "name_en": "LIM PEI JUN", "class": "S2Y", "student_id": "22030", "order": 3},
+    {"group": "沧澜组", "name_cn": "陈诗惠", "name_en": "CHAN SHI HUI", "class": "S2FA", "student_id": "22017", "order": 4},
+    {"group": "沧澜组", "name_cn": "郑憶欣", "name_en": "TEE YEE XIN", "class": "S1Y", "student_id": "23065", "order": 5},
+    {"group": "沧澜组", "name_cn": "谢楷棋", "name_en": "CHEAH KHAI QI", "class": "S1T", "student_id": "23013", "order": 6},
+    {"group": "沧澜组", "name_cn": "蔡善恩", "name_en": "CHUAH SHAN EN", "class": "J3F", "student_id": "24039", "order": 7},
+    {"group": "沧澜组", "name_cn": "许家绮", "name_en": "KOO JIA QI", "class": "J2Y", "student_id": "25031", "order": 8},
+    {"group": "沧澜组", "name_cn": "张子欣", "name_en": "TEON ZI XIN", "class": "J2F", "student_id": "25070", "order": 9},
+    {"group": "沧澜组", "name_cn": "施锦轩", "name_en": "SEE JIN XUAN", "class": "J1T", "student_id": "26092", "order": 10}
+]
+
+# 自动匹配每一行
+people = []
+group_totals = {g: 0 for g in ["星穹组", "夜曜组", "沧澜组"]}
+group_members_count = {g: 0 for g in ["星穹组", "夜曜组", "沧澜组"]}
+
+print("\n开始匹配成员...")
+
+for member in members_list:
+    found = False
     
-    dates = []
-    header_row = df.iloc[data_start - 1].astype(str).tolist()
-    for j in range(student_id_col + 1, len(header_row)):
-        if header_row[j] and 'Unnamed' not in header_row[j]:
-            val = header_row[j]
-            dates.append(val[:10] if '00:00' in val else val)
-    
-    people = []
-    for member in members_list:
-        found = False
-        for row_idx in range(data_start, len(df)):
-            row = df.iloc[row_idx]
-            if student_id_col < len(row) and str(row[student_id_col]).strip() == member['student_id']:
+    for i in range(len(df)):
+        row = df.iloc[i].tolist()
+        
+        if len(row) > 4:
+            row_name_cn = str(row[3]) if len(row) > 3 and pd.notna(row[3]) else ""
+            row_name_en = str(row[4]) if len(row) > 4 and pd.notna(row[4]) else ""
+            
+            if (member["name_cn"] in row_name_cn or 
+                member["name_en"][:20] in row_name_en[:20]):
+                
                 total = 0
                 score_dict = {}
-                for j, date in enumerate(dates):
-                    val = row[student_id_col + 1 + j] if student_id_col + 1 + j < len(row) else None
-                    if pd.notna(val):
-                        try:
-                            num = float(val)
-                            total += num
-                            if num > 0:
-                                score_dict[date] = num
-                        except:
-                            pass
-                people.append({**member, "score_dict": score_dict, "total": total})
+                
+                for j in range(7, len(row)):
+                    if j-7 < len(dates):
+                        date = dates[j-7]
+                        val = row[j]
+                        if pd.notna(val):
+                            try:
+                                num = float(val)
+                                total += num
+                                if num > 0:
+                                    score_dict[date] = num
+                            except (ValueError, TypeError):
+                                pass
+                
+                people.append({
+                    "group": member["group"],
+                    "order": member["order"],
+                    "name_cn": member["name_cn"],
+                    "name_en": member["name_en"],
+                    "class": member["class"],
+                    "student_id": member["student_id"],
+                    "score_dict": score_dict,
+                    "total": total
+                })
+                print(f"✓ 找到 {member['name_cn']} (总分: {total})")
                 found = True
                 break
-        if not found:
-            print(f"警告: 未找到 {member['name_cn']} (学号:{member['student_id']})")
     
-    return people, dates
+    if not found:
+        print(f"✗ 找不到 {member['name_cn']}")
 
-def calculate_stats(people):
-    groups = {}
-    for p in people:
-        groups.setdefault(p['group'], []).append(p)
-    
-    totals = {g: sum(p['total'] for p in members) for g, members in groups.items()}
-    sorted_groups = sorted(totals.items(), key=lambda x: x[1], reverse=True)
-    rank_map = {g: i+1 for i, (g, _) in enumerate(sorted_groups)}
-    
-    for g, members in groups.items():
-        avg = totals[g] / len(members)
-        rank = rank_map[g]
-        if rank == 1:
-            for p in members:
-                p['reward'] = 'P' if p['total'] >= avg / 2 else 'F'
-        elif rank == 2:
-            for p in members:
-                p['reward'] = 'P' if p['total'] >= avg else 'F'
-        else:
-            top3 = sorted(members, key=lambda x: x['total'], reverse=True)[:3]
-            top3_names = [t['name_cn'] for t in top3]
-            for p in members:
-                p['reward'] = 'P' if p['name_cn'] in top3_names else 'F'
-    
-    return groups, totals, rank_map
+print(f"\n总共找到 {len(people)} 人")
 
-def generate_html(people, dates, groups, totals, rank_map):
-    group_html = ""
-    for group_name, members in groups.items():
-        scores = [m['total'] for m in members]
-        max_s = max(scores) if scores else 1
-        min_s = min(scores) if scores else 0
+if len(people) == 0:
+    print("❌ 没有找到任何人！请检查：")
+    print("1. Google Sheets 权限是否设置为 '任何知道链接的人可查看'")
+    print("2. Sheet 名字是否正确（当前是 Sheet3）")
+    print("3. 数据格式是否和 Excel 一致")
+    exit(1)
+
+# 按组别整理
+group_data = {g: [] for g in ["星穹组", "夜曜组", "沧澜组"]}
+for p in people:
+    group_data[p["group"]].append(p)
+    group_totals[p["group"]] += p["total"]
+    group_members_count[p["group"]] += 1
+
+# 每个组内按order排序
+for g in group_data:
+    group_data[g].sort(key=lambda x: x["order"])
+
+# 计算当前排名
+sorted_groups = sorted(group_totals.items(), key=lambda x: x[1], reverse=True)
+group_rank = {}
+for i, (g, _) in enumerate(sorted_groups, 1):
+    group_rank[g] = i
+
+# 计算每组平均分
+group_averages = {}
+for g in ["星穹组", "夜曜组", "沧澜组"]:
+    if group_data[g]:
+        group_averages[g] = group_totals[g] / len(group_data[g])
+    else:
+        group_averages[g] = 0
+
+# 计算每个人的达标状态
+for g in group_data:
+    for p in group_data[g]:
+        rank = group_rank[g]
+        avg = group_averages[g]
         
-        group_html += '<div class="group-card">'
-        group_html += f'<div class="group-header"><div class="group-title">{group_name}</div><div class="group-badge">第{rank_map[group_name]}名</div></div>'
-        group_html += '<div class="table-container"><table class="member-table"><thead><tr><th>#</th><th>姓名</th><th>班级</th><th>学号</th><th>总分</th><th>奖</th></tr></thead><tbody>'
-        
-        for m in members:
-            if max_s > min_s:
-                heat = int(((m['total'] - min_s) / (max_s - min_s)) * 8) + 1
-                heat = min(9, max(1, heat))
+        if rank == 1:  # 第一名组别
+            p["reward_status"] = "✅" if p["total"] >= avg / 2 else "❌"
+            p["reward_class"] = "reward-pass" if p["total"] >= avg / 2 else "reward-fail"
+        elif rank == 2:  # 第二名组别
+            p["reward_status"] = "✅" if p["total"] >= avg else "❌"
+            p["reward_class"] = "reward-pass" if p["total"] >= avg else "reward-fail"
+        else:  # 第三名组别
+            # 找出组内前三名
+            top3 = sorted(group_data[g], key=lambda x: x["total"], reverse=True)[:3]
+            top3_names = [t["name_cn"] for t in top3]
+            if p["name_cn"] in top3_names:
+                p["reward_status"] = "✅"
+                p["reward_class"] = "reward-pass"
             else:
-                heat = 5
-            reward_display = '✅' if m['reward'] == 'P' else '❌'
-            group_html += f'<tr><td>{m["order"]}</td><td><div class="name-cn">{html.escape(m["name_cn"])}</div><div class="name-en">{html.escape(m["name_en"][:30])}</div></td><td>{m["class"]}</td><td>{m["student_id"]}</td><td><span class="total-heat" style="background: var(--heat-{heat});">{int(m["total"])}</span></td><td><span class="reward-{m["reward"]}">{reward_display}</span></td></tr>'
-        
-        group_html += '</tbody></table></div></div>'
-    
-    rank_cards = ''.join([f'<div class="rank-card" onclick="scrollToGroup(\'{g}\')"><div class="rank-score">{int(totals[g])}</div><div>{g}</div><div class="rank-note">第{rank_map[g]}名</div></div>' for g in totals.keys()])
-    
-    now = datetime.now().strftime('%m/%d %H:%M')
-    
-    html = '''<!DOCTYPE html>
+                p["reward_status"] = "❌"
+                p["reward_class"] = "reward-fail"
+
+# ===== 计算组内排名（新增）=====
+for g in group_data:
+    # 按总分从高到低排序
+    sorted_members = sorted(group_data[g], key=lambda x: x["total"], reverse=True)
+    # 分配排名
+    rank = 1
+    for i, member in enumerate(sorted_members):
+        if i > 0 and member["total"] < sorted_members[i-1]["total"]:
+            rank = i + 1
+        member["group_rank"] = rank
+        # 添加奖牌标记
+        if rank == 1:
+            member["medal"] = "🥇"
+        elif rank == 2:
+            member["medal"] = "🥈"
+        elif rank == 3:
+            member["medal"] = "🥉"
+        else:
+            member["medal"] = f"#{rank}"
+
+# 计算每组最高分和最低分，用于热力图
+group_max_scores = {}
+group_min_scores = {}
+for g in group_data:
+    if group_data[g]:
+        group_max_scores[g] = max(m["total"] for m in group_data[g])
+        group_min_scores[g] = min(m["total"] for m in group_data[g])
+    else:
+        group_max_scores[g] = 0
+        group_min_scores[g] = 0
+
+# 生成HTML - 添加OneSignal通知权限
+html = '''<!DOCTYPE html>
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>学长团分数板</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>训育处 - 学长团分数板</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <!-- OneSignal SDK - 用于通知权限 -->
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    
     <style>
-        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-        :root {{
-            --bg: #f5f7fc; --card: white; --text: #1a2b3c; --text-light: #5a6b7a;
-            --border: #e1e8f0; --heat-1: #083344; --heat-3: #155e75; --heat-5: #0284c7;
-            --heat-7: #7dd3fc; --heat-9: #e0f2fe; --reward-P: #dcfce7; --reward-F: #fee2e2;
-        }}
-        body.night-mode {{
-            --bg: #0f1825; --card: #1e2a3a; --text: #e6edf5; --text-light: #94a3b8;
-            --border: #2d3a4d; --heat-1: #000814; --heat-3: #003566; --heat-5: #1a5a8a;
-            --heat-7: #3a7aaa; --heat-9: #5a9aca; --reward-P: #1f4a3a; --reward-F: #562b2b;
-        }}
-        body {{ font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 12px; transition: 0.2s; }}
-        .container {{ max-width: 800px; margin: 0 auto; }}
-        .header {{ background: var(--card); border-radius: 20px; padding: 16px; margin-bottom: 16px; }}
-        .title {{ font-size: 1.5rem; font-weight: 600; margin-bottom: 12px; }}
-        .toolbar {{ display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }}
-        button {{ background: var(--card); border: 1px solid var(--border); border-radius: 30px; padding: 8px 16px; cursor: pointer; color: var(--text); }}
-        .download-btn {{ background: #eab308; font-weight: 600; border: none; color: #1a2b3c; }}
-        input {{ width: 100%; padding: 10px 16px; border: 1px solid var(--border); border-radius: 30px; background: var(--card); color: var(--text); }}
-        .rank-grid {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }}
-        .rank-card {{ background: var(--card); border-radius: 16px; padding: 12px; text-align: center; cursor: pointer; }}
-        .rank-score {{ font-size: 1.6rem; font-weight: 700; }}
-        .rank-note {{ font-size: 0.7rem; color: var(--text-light); }}
-        .group-card {{ background: var(--card); border-radius: 20px; padding: 16px; margin-bottom: 16px; }}
-        .group-header {{ display: flex; justify-content: space-between; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }}
-        .group-title {{ font-size: 1.2rem; font-weight: 600; }}
-        .group-badge {{ background: #eab308; padding: 2px 8px; border-radius: 20px; font-size: 0.8rem; color: #1a2b3c; }}
-        .table-container {{ overflow-x: auto; }}
-        .member-table {{ width: 100%; border-collapse: collapse; min-width: 500px; font-size: 0.85rem; }}
-        .member-table th, .member-table td {{ padding: 8px 6px; text-align: left; border-bottom: 1px solid var(--border); }}
-        .name-cn {{ font-weight: 600; }}
-        .name-en {{ font-size: 0.65rem; color: var(--text-light); }}
-        .total-heat {{ padding: 2px 8px; border-radius: 12px; font-weight: 600; color: white; }}
-        .reward-P, .reward-F {{ padding: 2px 8px; border-radius: 12px; display: inline-block; min-width: 32px; text-align: center; }}
-        .reward-P {{ background: var(--reward-P); color: #166534; }}
-        .reward-F {{ background: var(--reward-F); color: #991b1b; }}
-        body.night-mode .reward-P {{ color: #bbf7d0; }}
-        body.night-mode .reward-F {{ color: #fecaca; }}
-        .reminder-btn {{ position: fixed; bottom: 20px; right: 20px; background: #eab308; padding: 14px 24px; border-radius: 60px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); color: #1a2b3c; }}
-        .footer {{ margin-top: 20px; text-align: center; font-size: 0.7rem; color: var(--text-light); }}
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --bg-primary: #f5f7fc;
+            --bg-secondary: #ffffff;
+            --card-bg: #ffffff;
+            --text-primary: #1a2b3c;
+            --text-secondary: #2c3e50;
+            --text-tertiary: #5a6b7a;
+            --border-light: #e1e8f0;
+            --border-subtle: #eef2f6;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.02);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.04);
+            --shadow-lg: 0 8px 20px rgba(0,0,0,0.06);
+            
+            --star-primary: #eab308;
+            --star-light: #fef9c3;
+            --star-bg: #fefae8;
+            --night-primary: #a855f7;
+            --night-light: #f3e8ff;
+            --night-bg: #faf5ff;
+            --ocean-primary: #3b82f6;
+            --ocean-light: #dbeafe;
+            --ocean-bg: #f0f7ff;
+            
+            --score-bg: #f1f5f9;
+            --score-text: #475569;
+            --score-highlight: #dbeafe;
+            --score-highlight-text: #1e40af;
+            --reward-pass: #dcfce7;
+            --reward-pass-text: #166534;
+            --reward-fail: #fee2e2;
+            --reward-fail-text: #991b1b;
+            
+            --heat-1: #083344;
+            --heat-2: #164e63;
+            --heat-3: #155e75;
+            --heat-4: #0369a1;
+            --heat-5: #0284c7;
+            --heat-6: #38bdf8;
+            --heat-7: #7dd3fc;
+            --heat-8: #bae6fd;
+            --heat-9: #e0f2fe;
+            
+            --safe-top: env(safe-area-inset-top);
+            --safe-bottom: env(safe-area-inset-bottom);
+        }
+
+        /* 组内排名样式 */
+.rank-cell {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* 前三名特殊背景 */
+.rank-cell:contains("🥇") {
+    background: linear-gradient(135deg, #ffd70020, #ffb34720);
+    border-radius: 20px;
+}
+
+.rank-cell:contains("🥈") {
+    background: linear-gradient(135deg, #c0c0c020, #a0a0a020);
+    border-radius: 20px;
+}
+
+.rank-cell:contains("🥉") {
+    background: linear-gradient(135deg, #cd7f3220, #b8733320);
+    border-radius: 20px;
+}
+
+        body.night-mode {
+            --bg-primary: #0f1825;
+            --bg-secondary: #1e2a3a;
+            --card-bg: #1f2c3d;
+            --text-primary: #e6edf5;
+            --text-secondary: #cbd5e1;
+            --text-tertiary: #94a3b8;
+            --border-light: #2d3a4d;
+            --border-subtle: #253141;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+            --shadow-lg: 0 8px 20px rgba(0,0,0,0.5);
+            
+            --star-light: #423d2a;
+            --star-bg: #2f2a1f;
+            --night-light: #2f2740;
+            --night-bg: #252033;
+            --ocean-light: #1f3045;
+            --ocean-bg: #1c2638;
+            
+            --score-bg: #2d3a4f;
+            --score-text: #cbd5e1;
+            --score-highlight: #1e3a6f;
+            --score-highlight-text: #9ac7ff;
+            --reward-pass: #1f4a3a;
+            --reward-pass-text: #bbf7d0;
+            --reward-fail: #562b2b;
+            --reward-fail-text: #fecaca;
+            
+            --heat-1: #000814;
+            --heat-2: #001d3d;
+            --heat-3: #003566;
+            --heat-4: #0a4a7a;
+            --heat-5: #1a5a8a;
+            --heat-6: #2a6a9a;
+            --heat-7: #3a7aaa;
+            --heat-8: #4a8aba;
+            --heat-9: #5a9aca;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            padding: 12px;
+            padding-top: max(12px, var(--safe-top));
+            padding-bottom: max(12px, var(--safe-bottom));
+            min-height: 100vh;
+            transition: background 0.2s ease, color 0.2s ease;
+            line-height: 1.4;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        .double-tap-hint {
+            position: fixed;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--card-bg);
+            color: var(--text-primary);
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-light);
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        .double-tap-hint.show {
+            opacity: 0.9;
+        }
+
+        .header {
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .title-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .school-icon {
+            font-size: 1.6rem;
+        }
+
+        h1 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .lang-toggle {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-light);
+            border-radius: 30px;
+            padding: 6px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.8rem;
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .lang-toggle:active {
+            transform: scale(0.92);
+        }
+
+        .theme-toggle {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-light);
+            border-radius: 30px;
+            padding: 6px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.8rem;
+            color: var(--text-primary);
+            transition: background 0.15s ease;
+            white-space: nowrap;
+        }
+
+        .theme-toggle:active {
+            background: var(--border-light);
+            transform: scale(0.98);
+        }
+
+        .moon-icon {
+            display: inline-block;
+            font-size: 1rem;
+            transition: transform 0.2s ease;
+        }
+
+        body.night-mode .moon-icon {
+            transform: rotate(0deg);
+        }
+
+        body:not(.night-mode) .moon-icon {
+            transform: rotate(180deg);
+        }
+
+        .download-btn {
+            background: var(--star-primary);
+            border: none;
+            border-radius: 30px;
+            padding: 6px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.8rem;
+            color: #1a2b3c;
+            font-weight: 500;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+
+        .download-btn:active {
+            transform: scale(0.98);
+            opacity: 0.9;
+        }
+
+        body.night-mode .download-btn {
+            color: #ffffff;
+        }
+
+        .meta-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px dashed var(--border-subtle);
+            color: var(--text-tertiary);
+            font-size: 0.7rem;
+        }
+
+        .date-badge {
+            background: var(--bg-primary);
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.65rem;
+            border: 1px solid var(--border-subtle);
+            white-space: nowrap;
+        }
+
+        .search-wrapper {
+            position: relative;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-tertiary);
+            font-size: 0.9rem;
+        }
+
+        #search {
+            width: 100%;
+            padding: 10px 12px 10px 36px;
+            border: 1px solid var(--border-subtle);
+            border-radius: 30px;
+            font-size: 0.85rem;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            -webkit-appearance: none;
+        }
+
+        #search:focus {
+            outline: none;
+            border-color: var(--text-tertiary);
+        }
+
+        .heatmap-legend {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-bottom: 8px;
+            font-size: 0.65rem;
+            color: var(--text-tertiary);
+        }
+
+        .legend-colors {
+            display: flex;
+            gap: 2px;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+        }
+
+        .legend-color.low { background: var(--heat-1); }
+        .legend-color.mid-low { background: var(--heat-3); }
+        .legend-color.mid { background: var(--heat-5); }
+        .legend-color.mid-high { background: var(--heat-7); }
+        .legend-color.high { background: var(--heat-9); }
+
+        .legend-label {
+            display: flex;
+            gap: 8px;
+        }
+
+        .legend-label span.low { color: var(--heat-1); font-weight: bold; }
+        .legend-label span.high { color: var(--heat-9); font-weight: bold; }
+
+        .chart-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-subtle);
+            display: none;
+        }
+
+        .chart-card.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .chart-title {
+            font-size: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .chart-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .save-chart-btn {
+            background: var(--star-primary);
+            border: none;
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            color: #1a2b3c;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        body.night-mode .save-chart-btn {
+            color: #ffffff;
+        }
+
+        .close-chart {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 4px 10px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 200px;
+            width: 100%;
+            margin-bottom: 16px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .stat-item {
+            background: var(--bg-primary);
+            border-radius: 16px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.65rem;
+            color: var(--text-tertiary);
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .stat-rank {
+            font-size: 0.6rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .rank-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .rank-card {
+            background: var(--card-bg);
+            border-radius: 18px;
+            padding: 10px 8px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-subtle);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border-left: 3px solid;
+            transition: transform 0.1s ease;
+        }
+
+        .rank-card:active {
+            transform: scale(0.98);
+        }
+
+        .rank-card[data-group="星穹组"] {
+            border-left-color: #eab308 !important;
+            background: linear-gradient(to right, var(--star-bg), var(--card-bg));
+        }
+        .rank-card[data-group="夜曜组"] {
+            border-left-color: #a855f7 !important;
+            background: linear-gradient(to right, var(--night-bg), var(--card-bg));
+        }
+        .rank-card[data-group="沧澜组"] {
+            border-left-color: #3b82f6 !important;
+            background: linear-gradient(to right, var(--ocean-bg), var(--card-bg));
+        }
+
+        .rank-icon {
+            font-size: 1.4rem;
+        }
+
+        .rank-info {
+            flex: 1;
+        }
+
+        .rank-name {
+            font-weight: 600;
+            font-size: 0.75rem;
+            margin-bottom: 2px;
+        }
+
+        .rank-score {
+            font-weight: 700;
+            font-size: 1rem;
+            display: flex;
+            align-items: baseline;
+            gap: 2px;
+        }
+
+        .rank-score small {
+            font-size: 0.55rem;
+            font-weight: 400;
+            color: var(--text-tertiary);
+        }
+
+        .groups {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .group-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 14px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-subtle);
+            scroll-margin-top: 12px;
+            border-top: 3px solid;
+        }
+
+        .group-card[data-group="星穹组"] { border-top-color: #eab308 !important; }
+        .group-card[data-group="夜曜组"] { border-top-color: #a855f7 !important; }
+        .group-card[data-group="沧澜组"] { border-top-color: #3b82f6 !important; }
+
+        .group-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .group-title-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .group-emoji {
+            font-size: 1.2rem;
+        }
+
+        .group-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .group-stats {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .group-avg {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            background: var(--bg-primary);
+            border-radius: 20px;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-subtle);
+            white-space: nowrap;
+        }
+
+        .group-badge {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 20px;
+            color: white;
+            white-space: nowrap;
+        }
+
+        .group-card[data-group="星穹组"] .group-badge { background: #eab308; }
+        .group-card[data-group="夜曜组"] .group-badge { background: #a855f7; }
+        .group-card[data-group="沧澜组"] .group-badge { background: #3b82f6; }
+
+        .table-container {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin: 0 -4px;
+            padding: 0 4px;
+        }
+
+        .member-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 750px;
+            font-size: 0.8rem;
+        }
+
+        .member-table th {
+            text-align: left;
+            padding: 8px 4px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .member-table td {
+            padding: 8px 4px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .member-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .member-table th:nth-child(1) { width: 30px; text-align: center; }
+        .member-table th:nth-child(2) { width: 180px; }
+        .member-table th:nth-child(3) { width: 45px; }
+        .member-table th:nth-child(4) { width: 60px; }
+        .member-table th:nth-child(5) { width: auto; }
+        .member-table th:nth-child(6) { width: 40px; text-align: right; }
+        .member-table th:nth-child(7) { width: 35px; text-align: center; }
+
+        .member-table td:nth-child(1) { text-align: center; }
+        .member-table td:nth-child(6) { text-align: right; font-weight: 600; }
+        .member-table td:nth-child(7) { text-align: center; }
+
+        .name-cell {
+            max-width: 180px;
+            min-height: 45px;
+            position: relative;
+        }
+
+        .name-cn, .name-en {
+            transition: all 0.3s ease;
+        }
+
+        .name-cn {
+            font-weight: 600;
+            font-size: 0.8rem;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .name-en {
+            font-size: 0.65rem;
+            color: var(--text-tertiary);
+            white-space: normal;
+            line-height: 1.3;
+            word-break: break-word;
+        }
+
+        .name-cell.lang-switching .name-cn {
+            transform: translateY(100%);
+            opacity: 0;
+        }
+
+        .name-cell.lang-switching .name-en {
+            transform: translateY(-100%);
+            opacity: 0;
+        }
+
+        body.lang-zh .name-cell {
+            display: flex;
+            flex-direction: column;
+        }
+
+        body.lang-zh .name-cell .name-cn {
+            order: 1;
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        body.lang-zh .name-cell .name-en {
+            order: 2;
+            transform: translateY(0);
+            opacity: 0.8;
+        }
+
+        body.lang-en .name-cell {
+            display: flex;
+            flex-direction: column;
+        }
+
+        body.lang-en .name-cell .name-en {
+            order: 1;
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: var(--text-primary);
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        body.lang-en .name-cell .name-cn {
+            order: 2;
+            font-size: 0.65rem;
+            color: var(--text-tertiary);
+            font-weight: 400;
+            opacity: 0.8;
+            transform: translateY(0);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        body.lang-ms .name-cell {
+            display: flex;
+            flex-direction: column;
+        }
+
+        body.lang-ms .name-cell .name-en {
+            order: 1;
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: var(--text-primary);
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        body.lang-ms .name-cell .name-cn {
+            order: 2;
+            font-size: 0.65rem;
+            color: var(--text-tertiary);
+            font-weight: 400;
+            opacity: 0.8;
+            transform: translateY(0);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .info-cell {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        .score-tags {
+            display: flex;
+            gap: 2px;
+            flex-wrap: wrap;
+        }
+
+        .score-item {
+            padding: 2px 5px;
+            border-radius: 12px;
+            font-size: 0.55rem;
+            font-weight: 500;
+            background: var(--score-bg);
+            color: var(--score-text);
+            border: 1px solid var(--border-subtle);
+            transition: transform 0.1s ease;
+        }
+
+        .score-item:hover {
+            transform: scale(1.1);
+            z-index: 10;
+        }
+
+        .score-item.has-score {
+            background: var(--score-highlight);
+            color: var(--score-highlight-text);
+        }
+
+        .score-date { opacity: 0.7; margin-right: 1px; }
+        .score-value { font-weight: 600; }
+
+        .total-heat {
+            font-weight: 700;
+            font-size: 0.9rem;
+            padding: 2px 6px;
+            border-radius: 12px;
+            display: inline-block;
+            min-width: 35px;
+            text-align: center;
+            color: #ffffff !important;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        body.night-mode .total-heat {
+            color: #ffffff !important;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+
+        .reward-pass, .reward-fail {
+            padding: 2px 5px;
+            border-radius: 12px;
+            font-size: 0.55rem;
+            font-weight: 600;
+            display: inline-block;
+            min-width: 30px;
+            text-align: center;
+        }
+
+        .reward-pass {
+            background: var(--reward-pass);
+            color: var(--reward-pass-text);
+        }
+
+        .reward-fail {
+            background: var(--reward-fail);
+            color: var(--reward-fail-text);
+        }
+
+        .reward-section {
+            background: linear-gradient(135deg, var(--card-bg) 0%, var(--bg-primary) 100%);
+            border-radius: 20px;
+            padding: 16px;
+            margin-top: 20px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-light);
+            border-left: 4px solid #eab308;
+        }
+
+        .reward-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .reward-icon {
+            font-size: 1.6rem;
+        }
+
+        .reward-header h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .reward-subtitle {
+            font-size: 0.7rem;
+            color: var(--text-tertiary);
+            margin-bottom: 12px;
+            padding-left: 8px;
+            border-left: 2px solid #eab308;
+        }
+
+        .reward-content {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .reward-item {
+            background: var(--bg-primary);
+            border-radius: 16px;
+            padding: 10px;
+            border: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .reward-rank {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-width: 60px;
+        }
+
+        .rank-medal {
+            font-size: 1.4rem;
+        }
+
+        .rank-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .reward-condition {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 3px 8px;
+            font-size: 0.65rem;
+            font-weight: 500;
+            border: 1px solid var(--border-light);
+            margin-bottom: 4px;
+            white-space: nowrap;
+        }
+
+        .reward-benefit {
+            color: var(--star-primary);
+            font-weight: 500;
+            font-size: 0.65rem;
+        }
+
+        .reward-note {
+            background: var(--bg-primary);
+            border-radius: 16px;
+            padding: 10px;
+            margin-top: 8px;
+            border: 1px dashed var(--border-light);
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+
+        .reward-extra {
+            color: var(--night-primary);
+            font-weight: 500;
+        }
+
+        .reward-footer {
+            margin-top: 12px;
+            text-align: center;
+            font-size: 0.65rem;
+            color: var(--text-tertiary);
+            font-style: italic;
+        }
+
+        .footer {
+            margin-top: 16px;
+            text-align: center;
+            color: var(--text-tertiary);
+            font-size: 0.6rem;
+            padding: 12px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .download-toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--card-bg);
+            color: var(--text-primary);
+            padding: 10px 20px;
+            border-radius: 30px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: transform 0.3s ease;
+            z-index: 2000;
+            font-size: 0.8rem;
+        }
+
+        .download-toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #eab308;
+            color: #1a2b3c;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+        }
+
+        body.night-mode .toast-icon {
+            color: #ffffff;
+        }
+
+        .notification-toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-light);
+            z-index: 3000;
+            max-width: 280px;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        .notification-toast.show {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .toast-close {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            cursor: pointer;
+            color: var(--text-tertiary);
+            font-size: 0.8rem;
+            padding: 4px;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .toast-close:hover {
+            background: var(--border-subtle);
+        }
+
+        .toast-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+
+        .reminder-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--star-primary);
+            color: #1a2b3c;
+            padding: 14px 24px;
+            border-radius: 60px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 4px 15px rgba(234, 179, 8, 0.3);
+            cursor: pointer;
+            font-weight: 600;
+            border: 2px solid var(--border-light);
+            z-index: 1000;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            animation: pulse 2s infinite;
+        }
+
+        .reminder-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(234, 179, 8, 0.4);
+        }
+
+        .reminder-btn:active {
+            transform: scale(0.95);
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 4px 15px rgba(234, 179, 8, 0.3);
+            }
+            50% {
+                box-shadow: 0 8px 25px rgba(234, 179, 8, 0.6);
+            }
+            100% {
+                box-shadow: 0 4px 15px rgba(234, 179, 8, 0.3);
+            }
+        }
+
+        .bell-icon {
+            font-size: 1.4rem;
+            animation: ring 3s infinite;
+        }
+
+        @keyframes ring {
+            0%, 100% { transform: rotate(0); }
+            10%, 30%, 50%, 70%, 90% { transform: rotate(10deg); }
+            20%, 40%, 60%, 80% { transform: rotate(-10deg); }
+        }
+
+        .reminder-popup {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            background: var(--card-bg);
+            border-radius: 24px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-light);
+            width: 300px;
+            z-index: 2000;
+            display: none;
+            animation: slideUp 0.4s ease;
+        }
+
+        .reminder-popup.show {
+            display: block;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .popup-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+        }
+
+        .popup-icon {
+            font-size: 1.4rem;
+        }
+
+        .popup-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .popup-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            cursor: pointer;
+            font-size: 1rem;
+            color: var(--text-tertiary);
+            padding: 4px;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .popup-close:hover {
+            background: var(--border-subtle);
+        }
+
+        .popup-content {
+            padding: 16px;
+        }
+
+        .time-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .time-item:last-child {
+            border-bottom: none;
+        }
+
+        .time-icon {
+            font-size: 1.2rem;
+            width: 32px;
+        }
+
+        .time-label {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            width: 80px;
+        }
+
+        .time-desc {
+            font-size: 0.85rem;
+            color: var(--text-tertiary);
+        }
+
+        .popup-footer {
+            padding: 16px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .popup-btn {
+            width: 100%;
+            background: var(--star-primary);
+            color: #1a2b3c;
+            border: none;
+            border-radius: 30px;
+            padding: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .popup-btn:hover {
+            transform: scale(1.02);
+            background: #ca8a04;
+        }
+
+        .popup-btn:active {
+            transform: scale(0.98);
+        }
+
+        body.night-mode .popup-btn {
+            color: #ffffff;
+        }
+
+        @media (max-width: 360px) {
+            .rank-name { font-size: 0.7rem; }
+            .rank-score { font-size: 0.9rem; }
+            .group-title { font-size: 1rem; }
+            .member-table { min-width: 650px; }
+            .name-en { font-size: 0.6rem; }
+            .action-buttons { width: 100%; justify-content: flex-end; }
+        }
     </style>
 </head>
-<body>
-<div class="container">
-    <div class="header">
-        <div class="title">🏫 学长团分数板</div>
-        <div class="toolbar">
-            <button class="download-btn" onclick="alert(\'统计图功能开发中\')">📊 生成统计图</button>
-            <button onclick="toggleLang()">🌐 语言</button>
-            <button onclick="toggleTheme()">🌓 深色</button>
+<body class="lang-zh">
+    <div class="container">
+        <div class="double-tap-hint" id="doubleTapHint">
+            <span id="hintText">👆 双击屏幕 / 按两次空格 切换深色模式</span>
         </div>
-        <input type="text" id="search" placeholder="🔍 搜姓名/班级/学号...">
-        <div style="font-size:0.7rem; margin-top:8px; color:var(--text-light)">更新时间: {now}</div>
-    </div>
-    
-    <div class="rank-grid" id="rankGrid">
-        {rank_cards}
-    </div>
-    
-    <div id="groupsContainer">
-        {group_html}
-    </div>
-    
-    <div class="reminder-btn" onclick="showTomorrow()">🔔 明天穿什么？</div>
-    <div class="footer">👆 双击切换深色 · 颜色越浅分数越高 · 数据每日更新</div>
-</div>
 
-<script>
-    const CCA = {json.dumps(cca_data, ensure_ascii=False)};
-    let lang = 'zh';
-    const texts = {json.dumps(languages, ensure_ascii=False)};
+        <div class="header">
+            <div class="header-top">
+                <div class="title-group">
+                    <span class="school-icon">🏫</span>
+                    <h1>学长团分数板 · 热力图</h1>
+                </div>
+                <div class="action-buttons">
+    <button class="download-btn" id="downloadBtn">
+        <span>📊</span>
+        <span>生成统计图</span>
+    </button>
+    <div class="lang-toggle" id="langToggle">
+        <span class="lang-left">中</span>
+        <span class="lang-separator">/</span>
+        <span class="lang-right">EN</span>
+    </div>
+    <div class="theme-toggle" id="themeToggle">
+        <span class="moon-icon">🌓</span>
+        <span>深色</span>
+    </div>
+</div>
+                </div>
+            </div>
+            <div class="meta-info">
+                <span>Prefects' Scoreboard · 颜色越浅分数越高</span>
+                <span class="date-badge">{datetime.now().strftime('%m/%d %H:%M')}</span>
+            </div>
+            <div class="search-wrapper">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="search" placeholder="搜姓名/班级/学号...">
+            </div>
+        </div>
+
+        <div class="heatmap-legend">
+            <div class="legend-label">
+                <span class="low">低分 █</span>
+                <span> → </span>
+                <span class="high">高分 █</span>
+            </div>
+            <div class="legend-colors">
+                <div class="legend-color low" title="低分（深色）"></div>
+                <div class="legend-color mid-low" title="中低分"></div>
+                <div class="legend-color mid" title="中分"></div>
+                <div class="legend-color mid-high" title="中高分"></div>
+                <div class="legend-color high" title="高分（浅色）"></div>
+            </div>
+        </div>
+
+        <div class="chart-card" id="chartCard">
+            <div class="chart-header">
+                <span class="chart-title">
+                    <span>📊</span>
+                    各组总分对比
+                </span>
+                <div class="chart-actions">
+                    <button class="save-chart-btn" id="saveChartBtn">
+                        <span>💾</span>
+                        <span>保存到相册</span>
+                    </button>
+                    <button class="close-chart" id="closeChart">关闭</button>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="groupChart"></canvas>
+            </div>
+            <div class="stats-grid" id="statsGrid"></div>
+        </div>
+
+        <div class="rank-grid">
+            <!-- 组排名卡片区域 -->
+        </div>
+
+        <div class="groups">
+            <!-- 组别详情区域 -->
+        </div>
+
+        <div class="reward-section">
+            <div class="reward-header">
+                <span class="reward-icon">🎁</span>
+                <h2>本轮奖励机制</h2>
+            </div>
+            <div class="reward-subtitle">
+                公平原则 · 不负每一位付出的学长
+            </div>
+            <div class="reward-content">
+                <div class="reward-item">
+                    <div class="reward-rank">
+                        <span class="rank-medal">🥇</span>
+                        <span class="rank-title">第1名</span>
+                    </div>
+                    <div>
+                        <div class="reward-condition">分数 ≥ 平均分÷2</div>
+                        <div class="reward-benefit">✨免搬椅子+减免操步</div>
+                    </div>
+                </div>
+                <div class="reward-item">
+                    <div class="reward-rank">
+                        <span class="rank-medal">🥈</span>
+                        <span class="rank-title">第2名</span>
+                    </div>
+                    <div>
+                        <div class="reward-condition">分数 ≥ 平均分</div>
+                        <div class="reward-benefit">✨免搬椅子+减免操步</div>
+                    </div>
+                </div>
+                <div class="reward-item">
+                    <div class="reward-rank">
+                        <span class="rank-medal">🥉</span>
+                        <span class="rank-title">第3名</span>
+                    </div>
+                    <div>
+                        <div class="reward-condition">组内前三名</div>
+                        <div class="reward-benefit">✨免搬椅子+减免操步</div>
+                    </div>
+                </div>
+            </div>
+            <div class="reward-note">
+                <span class="reward-extra">🎁 第1名达标者额外奖励一份</span>
+            </div>
+            <div class="reward-footer">
+                * 未达标者工作照旧 *
+            </div>
+        </div>
+
+        <div class="reminder-btn" id="reminderBtn">
+            <span class="bell-icon">🔔</span>
+            <span class="reminder-text">开启提醒</span>
+        </div>
+
+        <div class="reminder-popup" id="reminderPopup">
+            <div class="popup-header">
+                <span class="popup-icon">⏰</span>
+                <span class="popup-title">每日提醒时间</span>
+                <span class="popup-close" onclick="closePopup()">✕</span>
+            </div>
+            <div class="popup-content">
+                <div class="time-item">
+                    <span class="time-icon">🌅</span>
+                    <span class="time-label">早上 6:00</span>
+                    <span class="time-desc">起床提醒</span>
+                </div>
+                <div class="time-item">
+                    <span class="time-icon">🌆</span>
+                    <span class="time-label">晚上 7:00</span>
+                    <span class="time-desc">明天衣服提醒</span>
+                </div>
+                <div class="time-item">
+                    <span class="time-icon">🌙</span>
+                    <span class="time-label">晚上 8:15</span>
+                    <span class="time-desc">再次提醒</span>
+                </div>
+                <div class="time-item">
+                    <span class="time-icon">🌃</span>
+                    <span class="time-label">晚上 10:00</span>
+                    <span class="time-desc">睡前提醒</span>
+                </div>
+            </div>
+            <div class="popup-footer">
+                <button class="popup-btn" onclick="enableReminders()">知道了，开启提醒</button>
+            </div>
+        </div>
+
+        <div class="notification-toast" id="notificationToast">
+            <div class="toast-close" onclick="this.parentElement.classList.remove('show')">✕</div>
+            <div class="toast-title">
+                <span>🔔</span>
+                <span id="toastMessage">通知</span>
+            </div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary);" id="toastDetail"></div>
+        </div>
+
+        <div class="footer">
+            👆 双击屏幕 / 按两次空格切换深色 · 📊下载统计 · 颜色越浅分数越高
+        </div>
+    </div>
+
+    <div class="download-toast" id="downloadToast">
+        <span class="toast-icon">✓</span>
+        <span id="toastMessage">统计图已生成</span>
+    </div>
+
+    <script>
+        // ===== 替换原有的 OneSignal 初始化部分 =====
+window.OneSignalDeferred = window.OneSignalDeferred || [];
+OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+        appId: "9d36f74b-0815-4845-aeee-bf68f48e64d4", // 确保这是你在 OneSignal 面板申请的 ID
+        allowLocalhostAsSecureOrigin: true,
+        notifyButton: {
+            enable: false, // 用我们自己的 bell-icon 按钮触发，关掉自带的
+        },
+    });
+});
+        // ========== 首先定义所有函数 ==========
+        
+        // 切换深色模式
+        function toggleNightMode() {
+            document.body.classList.toggle('night-mode');
+            showHint(document.body.classList.contains('night-mode') ? '🌙 深色模式' : '☀️ 日间模式');
+            
+            // 如果图表显示中，重新生成以适配深色模式
+            const chartCard = document.getElementById('chartCard');
+            if (chartCard && chartCard.classList.contains('show') && window.chart) {
+                generateChart();
+            }
+        }
+
+        // 显示提示
+        function showHint(message) {
+            const hint = document.getElementById('doubleTapHint');
+            const hintText = document.getElementById('hintText');
+            if (!hint || !hintText) return;
+            
+            hintText.textContent = message;
+            hint.classList.add('show');
+            
+            clearTimeout(window.hintTimeout);
+            window.hintTimeout = setTimeout(() => {
+                hint.classList.remove('show');
+            }, 1500);
+        }
+
+        // 显示下载提示
+        function showToast(message, isSuccess = true) {
+            const toast = document.getElementById('downloadToast');
+            const msgEl = document.getElementById('toastMessage');
+            if (!toast || !msgEl) return;
+            
+            msgEl.textContent = message;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+
+        // 显示通知提示
+        function showNotification(title, detail) {
+            const toast = document.getElementById('notificationToast');
+            const titleEl = document.getElementById('toastMessage');
+            const detailEl = document.getElementById('toastDetail');
+            
+            if (!toast || !titleEl || !detailEl) return;
+            
+            titleEl.textContent = title;
+            detailEl.textContent = detail;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // ===== 强化激活函数 =====
+async function enableReminders() {
+    OneSignalDeferred.push(async function(OneSignal) {
+        // 1. 检查浏览器是否支持
+        if (!OneSignal.Notifications.isPushSupported()) {
+            showNotification('❌ 不支持', '您的浏览器不支持网页通知');
+            return;
+        }
+
+        // 2. 弹出系统原生权限请求
+        try {
+            await OneSignal.Notifications.requestPermission();
+            
+            // 3. 检查是否成功获取权限
+            if (OneSignal.Notifications.permission) {
+                showNotification('✅ 权限已开启', '您已成功订阅联课提醒');
+                
+                // 可以在这里给用户打标签，方便后台定向推送
+                OneSignal.User.addTag("role", "prefect"); 
+                
+                closePopup();
+            } else {
+                showNotification('⚠️ 权限被拒绝', '请在浏览器设置中手动开启通知');
+            }
+        } catch (err) {
+            console.error("Permission error:", err);
+        }
+    });
+}
+
+        // 显示提醒弹窗
+        function showReminderPopup() {
+            const popup = document.getElementById('reminderPopup');
+            if (popup) popup.classList.add('show');
+        }
+
+        // 关闭弹窗
+        function closePopup() {
+            const popup = document.getElementById('reminderPopup');
+            if (popup) popup.classList.remove('show');
+        }
+
+        // 生成统计图
+        
+        // 保存图表
+        async function saveChartToGallery() {
+            const chartCard = document.getElementById('chartCard');
+            if (!chartCard) return;
+            
+            try {
+                showToast('📸 正在生成图片...');
+                
+                if (!window.chart) {
+                    generateChart();
+                }
+                
+                setTimeout(async () => {
+                    const canvas = await html2canvas(chartCard, {
+                        scale: 2,
+                        backgroundColor: getComputedStyle(document.body).backgroundColor,
+                        allowTaint: false,
+                        useCORS: true,
+                        logging: false
+                    });
+                    
+                    const link = document.createElement('a');
+                    link.download = `prefects_score_${new Date().toISOString().slice(0,10)}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                    
+                    showToast('✅ 已保存到相册');
+                }, 500);
+                
+            } catch (error) {
+                console.error('保存失败:', error);
+                showToast('❌ 保存失败');
+            }
+        }
+
+        // ========== DOM 加载完成后绑定事件 ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            // 深色模式切换
+            const themeToggle = document.getElementById('themeToggle');
+            if (themeToggle) {
+                themeToggle.addEventListener('click', function(e) {
+                    toggleNightMode();
+                });
+            }
+
+            // 语言切换
+            const langToggle = document.getElementById('langToggle');
+            if (langToggle) {
+                langToggle.addEventListener('click', function(e) {
+                    const body = document.body;
+                    if (body.classList.contains('lang-zh')) {
+                        body.classList.remove('lang-zh');
+                        body.classList.add('lang-en');
+                        this.querySelector('.lang-left').textContent = 'EN';
+                        this.querySelector('.lang-right').textContent = 'MS';
+                    } else if (body.classList.contains('lang-en')) {
+                        body.classList.remove('lang-en');
+                        body.classList.add('lang-ms');
+                        this.querySelector('.lang-left').textContent = 'MS';
+                        this.querySelector('.lang-right').textContent = '中';
+                    } else {
+                        body.classList.remove('lang-ms');
+                        body.classList.add('lang-zh');
+                        this.querySelector('.lang-left').textContent = '中';
+                        this.querySelector('.lang-right').textContent = 'EN';
+                    }
+                    showNotification('🌐', `已切换到 ${body.classList.contains('lang-zh') ? '中文' : body.classList.contains('lang-en') ? 'English' : 'Bahasa Melayu'}`);
+                });
+            }
+// ========== 统计图表相关函数 ==========
+function generateChart() {
+    const canvas = document.getElementById('groupChart');
+    if (!canvas) return;
     
-    function toggleTheme() {{
-        document.body.classList.toggle('night-mode');
-    }}
+    const ctx = canvas.getContext('2d');
+    const isNightMode = document.body.classList.contains('night-mode');
+    const textColor = isNightMode ? '#94a3b8' : '#5a6b7a';
+    const gridColor = isNightMode ? '#2d3a4d' : '#e1e8f0';
     
-    function toggleLang() {{
-        lang = lang === 'zh' ? 'en' : 'zh';
-        document.querySelector('.title').innerHTML = '🏫 ' + texts[lang].title;
-        document.querySelector('#search').placeholder = texts[lang].search;
-        document.querySelector('.download-btn').innerHTML = '📊 ' + texts[lang].download;
-        document.querySelector('.footer').innerHTML = texts[lang].footer;
-    }}
+    // 从全局获取数据
+    const groups = window.chartGroups || ['星穹组', '夜曜组', '沧澜组'];
+    const scores = window.chartScores || [0, 0, 0];
     
-    function showTomorrow() {{
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const dateStr = tomorrow.toISOString().split('T')[0];
-        const act = CCA.find(a => a.date === dateStr);
-        if (act) {{
-            alert('📅 明天(' + dateStr + ')\\n👕 穿: ' + act.uniform + '\\n📋 活动: ' + act.activity);
-        }} else {{
-            alert('📅 明天(' + dateStr + ')\\n✅ 没有联课活动');
-        }}
-    }}
+    // 颜色固定映射
+    const groupColorMap = {
+        '星穹组': '#eab308',
+        '夜曜组': '#a855f7',
+        '沧澜组': '#3b82f6'
+    };
     
-    function scrollToGroup(group) {{
-        const cards = document.querySelectorAll('.group-card');
-        for (let card of cards) {{
-            if (card.querySelector('.group-title').innerText === group) {{
-                card.scrollIntoView({{ behavior: 'smooth' }});
-                break;
-            }}
-        }}
-    }}
+    // 根据组别生成颜色数组
+    const colors = groups.map(g => groupColorMap[g] || '#888888');
     
-    document.getElementById('search').addEventListener('input', (e) => {{
-        const term = e.target.value.toLowerCase();
-        const rows = document.querySelectorAll('.member-table tbody tr');
-        for (let row of rows) {{
-            const name = row.querySelector('.name-cn')?.innerText.toLowerCase() || '';
-            const cls = row.children[2]?.innerText.toLowerCase() || '';
-            row.style.display = name.includes(term) || cls.includes(term) ? '' : 'none';
-        }}
-    }});
+    if (window.chart) {
+        window.chart.destroy();
+    }
     
-    let lastTap = 0;
-    document.addEventListener('touchstart', (e) => {{
-        const now = Date.now();
-        if (now - lastTap < 200) toggleTheme();
-        lastTap = now;
-    }});
+    window.chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: groups,
+            datasets: [{
+                label: '总分',
+                data: scores,
+                backgroundColor: colors,
+                borderRadius: 6,
+                barPercentage: 0.6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `总分: ${context.raw}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: gridColor },
+                    ticks: { color: textColor }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: textColor }
+                }
+            }
+        }
+    });
     
-    document.addEventListener('keydown', (e) => {{
-        if (e.code === 'Space') {{
-            e.preventDefault();
-            toggleTheme();
-        }}
-    }});
+    // 更新统计卡片
+    updateStatsGrid(groups, scores);
+}
+
+function updateStatsGrid(groups, scores) {
+    const statsGrid = document.getElementById('statsGrid');
+    if (!statsGrid) return;
     
-    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {{
-        document.body.classList.add('night-mode');
-    }}
-</script>
+    // 从全局获取组别数据
+    const groupData = window.groupStatsData || {};
+    
+    statsGrid.innerHTML = groups.map((g, i) => {
+        const data = groupData[g];
+        const membersCount = data ? data.members : '?';
+        const rank = data ? data.rank : (i + 1);
+        return `
+            <div class="stat-item">
+                <div class="stat-label">${g}</div>
+                <div class="stat-value">${scores[i]}</div>
+                <div class="stat-rank">第${rank}名 · ${membersCount}人</div>
+            </div>
+        `;
+    }).join('');
+}
+
+// 初始化图表数据
+function initChartData(groupsList, scoresList, statsData) {
+    window.chartGroups = groupsList;
+    window.chartScores = scoresList;
+    window.groupStatsData = statsData;
+}
+            // 下载统计按钮
+            const downloadBtn = document.getElementById('downloadBtn');
+            const chartCard = document.getElementById('chartCard');
+            const closeChart = document.getElementById('closeChart');
+            
+            if (downloadBtn && chartCard) {
+                downloadBtn.addEventListener('click', function(e) {
+                    chartCard.classList.add('show');
+                    generateChart();
+                    showToast('📊 统计图已生成');
+                });
+            }
+
+            // 保存图表按钮
+            const saveChartBtn = document.getElementById('saveChartBtn');
+            if (saveChartBtn) {
+                saveChartBtn.addEventListener('click', function(e) {
+                    saveChartToGallery();
+                });
+            }
+
+            // 关闭图表
+            if (closeChart && chartCard) {
+                closeChart.addEventListener('click', function(e) {
+                    chartCard.classList.remove('show');
+                });
+            }
+
+            // 搜索功能
+            const searchInput = document.getElementById('search');
+            if (searchInput) {
+                searchInput.addEventListener('input', function(e) {
+                    const searchTerm = e.target.value.toLowerCase().trim();
+                    const allRows = document.querySelectorAll('tbody tr');
+                    
+                    allRows.forEach(row => {
+                        const searchText = row.getAttribute('data-search')?.toLowerCase() || '';
+                        row.style.display = searchText.includes(searchTerm) ? '' : 'none';
+                    });
+                });
+            }
+
+            // 底部悬浮按钮
+const reminderBtn = document.getElementById('reminderBtn');
+if (reminderBtn) {
+    reminderBtn.addEventListener('click', function(e) {
+        showReminderPopup();
+    });
+}
+
+            // 点击外部关闭弹窗
+            document.addEventListener('click', function(e) {
+                const popup = document.getElementById('reminderPopup');
+                const btn = document.getElementById('reminderBtn');
+                if (popup && btn) {
+                    if (!popup.contains(e.target) && !btn.contains(e.target)) {
+                        popup.classList.remove('show');
+                    }
+                }
+            });
+
+            // 双击/双空格监听
+            let lastTap = 0;
+            let lastSpaceTime = 0;
+            let spaceCount = 0;
+
+            document.addEventListener('touchstart', (e) => {
+                const currentTime = new Date().getTime();
+                const tapLength = currentTime - lastTap;
+                
+                if (tapLength < 200 && tapLength > 0) {
+                    toggleNightMode();
+                    e.preventDefault();
+                }
+                lastTap = currentTime;
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    
+                    const currentTime = new Date().getTime();
+                    
+                    if (currentTime - lastSpaceTime < 500) {
+                        spaceCount++;
+                        if (spaceCount === 2) {
+                            toggleNightMode();
+                            spaceCount = 0;
+                        }
+                    } else {
+                        spaceCount = 1;
+                    }
+                    
+                    lastSpaceTime = currentTime;
+                }
+            });
+        });
+
+        // 检查系统主题偏好
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.body.classList.add('night-mode');
+        }
+    </script>
 </body>
 </html>'''
-    
-    return html_content
 
-def main():
-    print("=" * 50)
-    print("学长团分数板生成器")
-    print("=" * 50)
-    
-    try:
-        people, dates = fetch_data()
-        print(f"✅ 找到 {len(people)} 位成员")
-        
-        groups, totals, rank_map = calculate_stats(people)
-        
-        html = generate_html(people, dates, groups, totals, rank_map)
-        
-        with open("index.html", "w", encoding="utf-8") as f:
-            f.write(html)
-        
-        print("✅ 已生成 index.html")
-        
-    except Exception as e:
-        print(f"❌ 错误: {e}")
-        raise
+# 添加联课活动数据和语言数据
+html = html.replace("{languages_json}", languages_json)
+html = html.replace("{cca_json}", cca_json)
 
-if __name__ == "__main__":
-    main()
+# 添加组排名卡片
+rank_icons = {1: "🥇", 2: "🥈", 3: "🥉"}
+group_ids = {"星穹组": "group-xingqiong", "夜曜组": "group-yeyao", "沧澜组": "group-canglan"}
+group_list = []
+total_list = []
+
+rank_cards_html = ""
+for i, (g, total) in enumerate(sorted_groups, 1):
+    group_id = group_ids[g]
+    group_list.append(g)
+    total_list.append(int(total))
+    
+    rank_cards_html += f'''
+            <div class="rank-card" data-group="{g}" onclick="document.getElementById('{group_id}').scrollIntoView({{behavior: 'smooth'}})">
+                <span class="rank-icon">{rank_icons[i]}</span>
+                <div class="rank-info">
+                    <div class="rank-name">{g}</div>
+                    <div class="rank-score">{int(total)}<small>分</small></div>
+                </div>
+            </div>
+'''
+
+# 准备统计数据
+stats_data = []
+for g in ["星穹组", "夜曜组", "沧澜组"]:
+    if g in group_data:
+        stats_data.append({
+            "group": g,
+            "total": int(group_totals[g]),
+            "rank": group_rank[g],
+            "members": len(group_data[g]),
+            "avg": int(group_averages[g]),
+            "color": "#eab308" if g == "星穹组" else "#a855f7" if g == "夜曜组" else "#3b82f6"
+        })
+
+# 添加组别详情
+group_emojis = {"星穹组": "✨", "夜曜组": "🌙", "沧澜组": "🌊"}
+groups_html = ""
+for group_name in ["星穹组", "夜曜组", "沧澜组"]:
+    members = group_data[group_name]
+    rank = group_rank[group_name]
+    group_id = group_ids[group_name]
+    avg_score = group_averages[group_name]
+    
+    # 获取该组的最高分和最低分
+    group_max = group_max_scores[group_name]
+    group_min = group_min_scores[group_name]
+    
+    group_html = f'''
+            <div class="group-card" data-group="{group_name}" id="{group_id}">
+                <div class="group-header">
+                    <div class="group-title-wrapper">
+                        <span class="group-emoji">{group_emojis[group_name]}</span>
+                        <span class="group-title">{group_name}</span>
+                    </div>
+                    <div class="group-stats">
+                        <span class="group-avg">平均 {int(avg_score)}</span>
+                        <span class="group-badge">第{rank}名</span>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="member-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>姓名</th>
+                                <th>班</th>
+                                <th>学号</th>
+                                <th>每日得分</th>
+                                <th>总分</th>
+                                <th>🏆 排名</th>
+                                <th>奖</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+'''
+    for member in members:
+        # 生成每日得分标签
+        score_tags = ""
+        sorted_dates = sorted(member["score_dict"].keys())
+        for date in sorted_dates[-5:]:
+            if date:
+                score = member["score_dict"][date]
+                score_tags += f'<span class="score-item has-score"><span class="score-date">{date}</span><span class="score-value">{int(score)}</span></span>'
+        
+        if not score_tags:
+            score_tags = '<span class="score-item">—</span>'
+        
+        # 完整显示英文名
+        name_en_full = member['name_en']
+        
+        # 计算热力图颜色 - 越浅越高分
+        total_score = member['total']
+        if group_max > group_min:
+            relative_score = (total_score - group_min) / (group_max - group_min)
+            heat_level = min(9, max(1, int(relative_score * 9) + 1))
+        else:
+            heat_level = 5
+        
+        total_cell = f'<span class="total-heat" style="background-color: var(--heat-{heat_level});">{int(total_score)}</span>'
+        
+        group_html += f'''
+                        <tr data-search="{member['name_cn']} {member['name_en']} {member['class']} {member['student_id']}">
+                            <td>{member['order']}</td>
+                            <td class="name-cell">
+                                <div class="name-cn">{member['name_cn']}</div>
+                                <div class="name-en">{name_en_full}</div>
+                            </td>
+                            <td class="info-cell">{member['class']}</td>
+                            <td class="info-cell">{member['student_id']}</td>
+                            <td><div class="score-tags">{score_tags}</div></td>
+                            <td>{total_cell}</td>
+                            <td class="rank-cell">{member['medal']}</td>
+                            <td><span class="{member['reward_class']}">{member['reward_status']}</span></td>
+'''
+    group_html += '''
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+'''
+    groups_html += group_html
+
+# 添加统计数据JSON
+stats_json = json.dumps(stats_data, ensure_ascii=False)
+
+# 替换HTML中的占位符
+html = html.replace('<!-- 组排名卡片区域 -->', rank_cards_html)
+html = html.replace('<!-- 组别详情区域 -->', groups_html)
+
+# 替换JavaScript中的数据
+html = html.replace('const groups = [\'星穹组\', \'夜曜组\', \'沧澜组\'];', f'const groups = {json.dumps(group_list)};')
+html = html.replace('const scores = [1234, 1156, 1089];', f'const scores = {json.dumps(total_list)};')
+
+# 替换日期
+html = html.replace('{datetime.now().strftime(\'%m/%d %H:%M\')}', datetime.now().strftime('%m/%d %H:%M'))
+
+# ===== 准备图表数据 =====
+# 按排名顺序的组别和分数
+sorted_groups_data = []
+for g, total in sorted_groups:
+    sorted_groups_data.append({
+        "name": g,
+        "score": int(total),
+        "members": len(group_data[g]),
+        "rank": group_rank[g],
+        "avg": int(group_averages[g])
+    })
+
+# 准备注入的数据
+chart_groups = [item["name"] for item in sorted_groups_data]
+chart_scores = [item["score"] for item in sorted_groups_data]
+
+# 准备组别统计数据
+group_stats_data = {}
+for g in ["星穹组", "夜曜组", "沧澜组"]:
+    if g in group_data:
+        group_stats_data[g] = {
+            "members": len(group_data[g]),
+            "total": int(group_totals[g]),
+            "avg": int(group_averages[g]),
+            "rank": group_rank[g]
+        }
+
+# 生成注入脚本
+init_script = f'''
+<script>
+// 图表数据初始化
+window.chartGroups = {json.dumps(chart_groups, ensure_ascii=False)};
+window.chartScores = {json.dumps(chart_scores, ensure_ascii=False)};
+window.groupStatsData = {json.dumps(group_stats_data, ensure_ascii=False)};
+
+// 颜色映射
+window.groupColorMap = {{
+    '星穹组': '#eab308',
+    '夜曜组': '#a855f7',
+    '沧澜组': '#3b82f6'
+}};
+
+// 页面加载后自动生成图表（如果图表卡片已显示）
+document.addEventListener('DOMContentLoaded', function() {{
+    const chartCard = document.getElementById('chartCard');
+    if (chartCard && chartCard.classList.contains('show')) {{
+        generateChart();
+    }}
+}});
+</script>
+'''
+
+# 在 </body> 之前注入
+html = html.replace('</body>', init_script + '\n</body>')
+
+# 保存HTML文件
+with open("index.html", "w", encoding="utf-8") as f:
+    f.write(html)
+
+print(f"\n✅ 生成成功！共 {len(people)} 人")
+print("\n📊 奖励统计:")
+for g in ["星穹组", "夜曜组", "沧澜组"]:
+    if g in group_data:
+        members = group_data[g]
+        pass_count = sum(1 for m in members if m["reward_status"] == "✅")
+        print(f"  {g}: {pass_count}/{len(members)} 人达标 ({int(pass_count/len(members)*100)}%)")
